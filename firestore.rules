@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'limon2581444@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Admins collection
+    match /admins/{adminId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Licenses collection
+    match /licenses/{licenseId} {
+      // Admins have full access
+      allow read, write: if isAdmin();
+
+      // Bot script can read a license document by ID to check validity
+      allow get: if isValidId(licenseId);
+
+      // Bot script can activate an unbound license by locking its boundDeviceId for the first time
+      allow update: if (
+        isValidId(licenseId) &&
+        // Cannot update if revoked
+        resource.data.status == 'active' &&
+        // Device locking action: only allowed if previously unbound
+        (
+          resource.data.boundDeviceId == null || 
+          resource.data.boundDeviceId == ''
+        ) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['boundDeviceId', 'deviceInfo', 'activatedAt']) &&
+        request.resource.data.boundDeviceId is string &&
+        request.resource.data.boundDeviceId.size() > 5 &&
+        request.resource.data.boundDeviceId.size() <= 128
+      );
+    }
+
+    // System Settings
+    match /system_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Signal Logs
+    match /signal_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isValidId(logId) && 
+        request.resource.data.licenseKey is string &&
+        request.resource.data.signalType in ['CALL', 'PUT'];
+    }
+  }
+}

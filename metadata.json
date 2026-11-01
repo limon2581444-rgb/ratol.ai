@@ -1,0 +1,6 @@
+{
+  "name": "Trade Lens AI",
+  "description": "Advanced Binary Options Trading Assistant & License Management System with Gemini AI and real-time device-bound license security.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

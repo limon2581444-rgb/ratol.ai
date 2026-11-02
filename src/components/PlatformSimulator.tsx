@@ -210,9 +210,11 @@ export const PlatformSimulator: React.FC<PlatformSimulatorProps> = ({ licenses }
   // Inject or mount bot-script.js
   const handleInjectBot = () => {
     if (typeof window !== 'undefined') {
-      const existing = document.getElementById('trade-lens-widget');
-      if (existing) {
-        existing.style.display = 'block';
+      const widget = document.getElementById('trade-lens-widget');
+      if (widget) {
+        widget.style.display = 'block';
+        const circleBtn = document.getElementById('tla-circle-btn');
+        if (circleBtn) circleBtn.click();
         setBotInjected(true);
         return;
       }
@@ -221,6 +223,8 @@ export const PlatformSimulator: React.FC<PlatformSimulatorProps> = ({ licenses }
       script.src = `/bot-script.js?t=${Date.now()}`;
       script.onload = () => {
         setBotInjected(true);
+        const circleBtn = document.getElementById('tla-circle-btn');
+        if (circleBtn) circleBtn.click();
       };
       document.body.appendChild(script);
     }

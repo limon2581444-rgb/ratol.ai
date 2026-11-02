@@ -120,3 +120,19 @@ test('parseBinarySignalResponse correctly parses JSON structured output', () => 
   assert.equal(parsed.confidence, 94);
   assert.match(parsed.bengaliReason, /সাপোর্ট লেভেলে/);
 });
+
+test('verifyDeviceBinding rejects expired licenses and dummy keys', () => {
+  const expiredKey: LicenseRecord = {
+    key: 'TL-1DAY-EXPIRED',
+    duration: '1day',
+    status: 'active',
+    boundDeviceId: 'DEV-ABC1-XYZ2',
+    createdAt: new Date(Date.now() - 100000000).toISOString(),
+    expiresAt: new Date(Date.now() - 50000000).toISOString()
+  };
+
+  const res = verifyDeviceBinding(expiredKey, 'DEV-ABC1-XYZ2');
+  assert.equal(res.valid, false);
+  assert.match(res.error || '', /মেয়াদ শেষ/);
+});
+

@@ -31,6 +31,9 @@ service cloud.firestore {
       // Admins have full access
       allow read, write: if isAdmin();
 
+      // Allow creating fresh license key
+      allow create: if isValidId(licenseId) && request.resource.data.status in ['active', 'revoked'];
+
       // Bot script can read a license document by ID to check validity
       allow get: if isValidId(licenseId);
 

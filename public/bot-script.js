@@ -893,7 +893,41 @@
     keyFeedback.style.color = '#38bdf8';
     keyFeedback.textContent = 'যাচাই করা হচ্ছে...';
 
-    const result = await verifyLicenseWithFirestore(keyToTry);
+    const formattedKey = (keyToTry || '').trim().toUpperCase();
+
+    // Strictly block dummy keys like 1 to 8 or 12345678
+    if (formattedKey.length < 5 || /^(12345678|1234|12345|123456|TEST|DEMO)$/.test(formattedKey)) {
+      keyFeedback.style.color = '#ef4444';
+      keyFeedback.textContent = 'ইনভ্যালিড লাইসেন্স কি! সঠিক কি প্রবেশ করান।';
+      statusDot.className = 'tla-status-dot locked';
+      return false;
+    }
+
+    // Try backend verification first
+    try {
+      const resp = await fetch(`${CONFIG.defaultAppUrl}/api/verify-license`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: formattedKey, deviceId: CURRENT_DEVICE_ID })
+      });
+      const data = await resp.json();
+      if (!data.valid) {
+        keyFeedback.style.color = '#ef4444';
+        keyFeedback.textContent = data.error || 'ভেরিফিকেশন ব্যর্থ হয়েছে!';
+        statusDot.className = 'tla-status-dot locked';
+        return false;
+      }
+      localStorage.setItem(CONFIG.storageKey, formattedKey);
+      keyFeedback.style.color = '#10b981';
+      keyFeedback.textContent = 'সফলভাবে এই ডিভাইসে লক ও সক্রিয় হয়েছে!';
+      statusDot.className = 'tla-status-dot';
+      setTimeout(() => { licenseBox.style.display = 'none'; }, 1200);
+      return true;
+    } catch (e) {
+      // Fallback to Firestore direct REST verification
+    }
+
+    const result = await verifyLicenseWithFirestore(formattedKey);
     if (!result.ok) {
       keyFeedback.style.color = '#ef4444';
       keyFeedback.textContent = result.error;
@@ -1064,7 +1098,7 @@
     voiceReplyText.textContent = 'যেমন বলুন: "নেক্সট ক্যান্ডেলে কি ট্রেড নেব?" বা "সাপোর্টে কখন ট্রেড নেব?"';
 
     // Initial greeting out loud in Bengali
-    const greetingMsg = 'হ্যালো! আমি সাব্বিরের এআই অ্যাসিস্ট্যান্ট। ট্রেড লেন্স এ আপনাকে স্বাগতম। আপনি ট্রেড নিয়ে কী জানতে চান বলুন।';
+    const greetingMsg = 'হ্যালো! আমি সাব্বিরের এআই অ্যাসিস্ট্যান্ট। ট্রেড লেন্স এ আপনাকে স্বাগতম।';
     speakBengaliVoice(greetingMsg, () => {
       // Listen to trader after greeting
       listenToTrader();

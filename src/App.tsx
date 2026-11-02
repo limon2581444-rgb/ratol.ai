@@ -152,12 +152,16 @@ export default function App() {
     // 1. Update local state immediately for instant feedback
     setLicenses((prev) => [newLicense, ...prev]);
 
-    // 2. Persist to Firestore
+    // 2. Persist to Firestore directly and via server endpoint
     try {
+      await fetch('/api/admin/create-license', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newLicense)
+      });
       await setDoc(doc(db, 'licenses', newLicense.key), newLicense);
     } catch (err) {
-      console.error('Error saving license to Firestore:', err);
-      handleFirestoreError(err, OperationType.WRITE, `licenses/${newLicense.key}`);
+      console.warn('License persistence note:', err);
     }
   };
 

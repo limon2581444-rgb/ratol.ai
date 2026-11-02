@@ -34,7 +34,8 @@ export default defineConfig(() => {
                 handleGenerateSignal,
                 handleVoiceAssistant,
                 handleAnalyzeChart,
-                handleVerifyLicense
+                handleVerifyLicense,
+                handleCreateLicense
               } = await import('./src/server/api.ts');
 
               if (req.url === '/api/generate-signal' && req.method === 'POST') {
@@ -48,6 +49,9 @@ export default defineConfig(() => {
               }
               if (req.url === '/api/verify-license' && req.method === 'POST') {
                 return handleVerifyLicense(req as any, res as any);
+              }
+              if (req.url === '/api/admin/create-license' && req.method === 'POST') {
+                return handleCreateLicense(req as any, res as any);
               }
 
               res.writeHead(404, { 'Content-Type': 'application/json' });
